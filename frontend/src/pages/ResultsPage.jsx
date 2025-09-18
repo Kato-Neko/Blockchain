@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/vote/card"
 import { Badge } from "@/components/ui/vote/badge"
@@ -48,21 +48,36 @@ const candidates = [
 export default function ResultsPage() {
   const navigate = useNavigate()
   
-  // Sample vote data - in a real app, this would come from your backend/API
-  const [votes] = useState({
-    "1": 1247,
-    "2": 1089,
-    "3": 892,
-    "4": 456,
-  })
+  const [results, setResults] = useState({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const totalVotes = Object.values(votes).reduce((sum, count) => sum + count, 0)
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch("http://localhost:8080/api/votes/results")
+        if (!response.ok) throw new Error("Network response was not ok")
+        const data = await response.json()
+        setResults(data)
+      } catch (err) {
+        setError(err.message)
+        console.error("Failed to fetch results:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchResults()
+  }, [])
+
+  const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0)
 
   const getVotePercentage = (candidateVotes) => {
+    if (!candidateVotes) return 0
     return totalVotes > 0 ? (candidateVotes / totalVotes) * 100 : 0
   }
 
-  const sortedCandidates = [...candidates].sort((a, b) => votes[b.id] - votes[a.id])
+  const sortedCandidates = [...candidates].sort((a, b) => (results[b.id] || 0) - (results[a.id] || 0))
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,6 +101,23 @@ export default function ResultsPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {isLoading && (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-semibold">Loading Results...</h2>
+            <p className="text-muted-foreground">Please wait a moment.</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-16 text-destructive">
+            <h2 className="text-2xl font-semibold">Failed to Load Results</h2>
+            <p>Could not connect to the server. Please try again later.</p>
+            <p className="text-sm mt-2">Error: {error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <>
         {/* Results Section */}
         <section>
           <div className="text-center mb-8">
@@ -106,7 +138,7 @@ export default function ResultsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {sortedCandidates.map((candidate, index) => {
-                  const candidateVotes = votes[candidate.id]
+                  const candidateVotes = results[candidate.id] || 0
                   const percentage = getVotePercentage(candidateVotes)
 
                   return (
@@ -160,7 +192,7 @@ export default function ResultsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{sortedCandidates[0]?.name.split(' ')[0]}</div>
                 <p className="text-xs text-muted-foreground">
-                  {getVotePercentage(votes[sortedCandidates[0]?.id]).toFixed(1)}% of votes
+                  {getVotePercentage(results[sortedCandidates[0]?.id]).toFixed(1)}% of votes
                 </p>
               </CardContent>
             </Card>
@@ -172,7 +204,7 @@ export default function ResultsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {sortedCandidates.length > 1 
-                    ? (getVotePercentage(votes[sortedCandidates[0]?.id]) - getVotePercentage(votes[sortedCandidates[1]?.id])).toFixed(1)
+                    ? (getVotePercentage(results[sortedCandidates[0]?.id]) - getVotePercentage(results[sortedCandidates[1]?.id])).toFixed(1)
                     : 0
                   }%
                 </div>
@@ -193,6 +225,8 @@ export default function ResultsPage() {
             Back to Vote
           </Button>
         </section>
+        </>
+        )}
 
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t text-center text-sm text-muted-foreground">
