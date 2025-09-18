@@ -1,0 +1,64 @@
+# Java / Spring Boot
+/target/
+/build/
+/out/
+/bin/
+/classes/
+/dependency-reduced-pom.xml
+
+# Spring Boot specific
+*.log
+*.tmp
+*.pid
+*.gz
+
+
+# VS Code
+.vscode/
+.history/
+
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# MySQL / Database
+*.sql
+*.db
+*.sql.gz
+*.dump
+*.mysql
+
+# MySQL Workbench files
+*.mwb
+*.bak
+*.backup
+
+
+# Environment / Config
+application-*.yml
+application-*.yaml
+application-*.properties
+.env
+*.secret
+*.key
+
+
+# Logs
+logs/
+*.out
+*.err
+
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
