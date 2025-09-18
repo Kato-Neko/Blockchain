@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/vote/card"
 import { Button } from "@/components/ui/button"
@@ -47,25 +47,48 @@ const candidates = [
 export default function VotePage() {
   const navigate = useNavigate()
   const [votedFor, setVotedFor] = useState(null)
-  const [votes, setVotes] = useState({
-    "1": 1247,
-    "2": 1089,
-    "3": 892,
-    "4": 456,
-  })
+  const [totalVotes, setTotalVotes] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const totalVotes = Object.values(votes).reduce((sum, count) => sum + count, 0)
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/votes/results")
+        if (!response.ok) {
+          throw new Error("Network response was not ok")
+        }
+        const results = await response.json()
+        const currentTotal = Object.values(results).reduce((sum, count) => sum + count, 0)
+        setTotalVotes(currentTotal)
+      } catch (error) {
+        console.error("Failed to fetch initial vote count:", error)
+      }
+    }
+    fetchInitialData()
+  }, [])
 
-  const handleVote = (candidateId) => {
-    if (votedFor) return // Already voted
+  const handleVote = async (candidateId) => {
+    if (votedFor || isSubmitting) return
 
-    setVotedFor(candidateId)
-    setVotes((prev) => ({
-      ...prev,
-      [candidateId]: prev[candidateId] + 1,
-    }))
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("http://localhost:8080/api/votes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId }),
+      })
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+      setVotedFor(candidateId)
+      setTotalVotes((prevTotal) => prevTotal + 1)
+    } catch (error) {
+      console.error("Failed to submit vote:", error)
+      alert("There was a problem submitting your vote. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +155,7 @@ export default function VotePage() {
 
                   <Button
                     onClick={() => handleVote(candidate.id)}
-                    disabled={votedFor !== null}
+                    disabled={votedFor !== null || isSubmitting}
                     className="w-full"
                     variant={votedFor === candidate.id ? "default" : "outline"}
                   >
@@ -141,6 +164,8 @@ export default function VotePage() {
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Vote Recorded
                       </>
+                    ) : isSubmitting ? (
+                      "Submitting..."
                     ) : votedFor ? (
                       "Voting Closed"
                     ) : (
