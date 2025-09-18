@@ -3,9 +3,7 @@ package com.hexagram.voting_app.controller;
 import com.hexagram.voting_app.dto.VoteRequest;
 import com.hexagram.voting_app.entity.Vote;
 import com.hexagram.voting_app.service.VoteService;
-
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,10 +42,12 @@ public class VoteController {
     @GetMapping("/id")
     public ResponseEntity<Vote> getVoteById(@PathVariable Long id) {
     Vote vote = voteService.getVoteById(id);
-        if (vote != null) {
-            return ResponseEntity.ok(vote);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+          if (vote != null) {
+              return ResponseEntity.ok(vote);
+          } else {
+              return ResponseEntity.notFound().build();
+          }
+      }
+  }
 }
+
